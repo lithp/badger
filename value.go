@@ -187,7 +187,8 @@ func (vlog *valueLog) calculateDiscardStat(f *logFile) (discardedRatio float64, 
 	var discarded, count int
 	fe := func(e Entry) error {
 		count++
-		ts := vlog.db.orc.readTs()
+		// ts := vlog.db.orc.readTs()
+		ts := vlog.db.orc.discardAtOrBelow()
 		key := y.ParseKey(e.Key)
 		vs, err := vlog.db.get(y.KeyWithTs(key, ts))
 		if err != nil {
@@ -1045,6 +1046,8 @@ LOOP:
 	// MaxDiscard will return fid=0 if it doesn't have any discard data. The
 	// vlog files start from 1.
 	if fid == 0 {
+		vlog.opt.Debugf("No file with discard stats, fallback search")
+
 		for fid = vlog.nextGCFid; fid < vlog.maxFid; fid++ {
 			lf := vlog.filesMap[fid]
 			if lf == nil {
